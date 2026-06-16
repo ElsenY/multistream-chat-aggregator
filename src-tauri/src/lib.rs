@@ -2,6 +2,7 @@ use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, Emitter};
 
 #[tauri::command]
 fn receive_youtube_message(app: AppHandle, msg: serde_json::Value) {
+    println!("[RUST] Received youtube message: {:?}", msg);
     let _ = app.emit("youtube-chat-message", msg);
 }
 
@@ -17,18 +18,19 @@ async fn spawn_youtube_webview(app: AppHandle, video_id: String) -> Result<(), S
         let lastScrapedId = '';
         
         function tauriLog(msg) {
+          console.log("[TAURI_LOG]: " + msg);
           if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke) {
              window.__TAURI_INTERNALS__.invoke("log_from_webview", { msg: String(msg) })
-               .catch(e => {});
+               .catch(e => console.error("TauriLog invoke error: ", e));
           }
         }
 
         function tauriEmit(data) {
           if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke) {
              window.__TAURI_INTERNALS__.invoke("receive_youtube_message", { msg: data })
-               .catch(e => tauriLog("Emit error: " + e));
+               .catch(e => console.error("Emit error: ", e));
           } else {
-             tauriLog("No Tauri internals found. Cannot emit data.");
+             console.log("No Tauri internals found. Cannot emit data.");
           }
         }
 

@@ -37,6 +37,7 @@ export class YouTubeChatClient {
       // 2. Set up event listener for messages BEFORE creating the webview
       this.unlistenMessage = await listen('youtube-chat-message', (event) => {
         const payload = event.payload as any;
+        console.log("FRONTEND received youtube message:", payload);
         const chatMsg: ChatMessage = {
           id: `yt-${++this.messageId}-${Date.now()}`,
           platform: 'youtube',
