@@ -6,22 +6,36 @@ fn receive_youtube_message(app: AppHandle, msg: serde_json::Value) {
 }
 
 #[tauri::command]
+fn log_from_webview(msg: String) {
+    println!("[YouTube Webview]: {}", msg);
+}
+
+#[tauri::command]
 async fn spawn_youtube_webview(app: AppHandle, video_id: String) -> Result<(), String> {
     let url = format!("https://www.youtube.com/live_chat?v={}&dark_theme=1", video_id);
     let init_script = r#"
         let lastScrapedId = '';
         
+        function tauriLog(msg) {
+          if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke) {
+             window.__TAURI_INTERNALS__.invoke("log_from_webview", { msg: String(msg) })
+               .catch(e => {});
+          }
+        }
+
         function tauriEmit(data) {
           if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke) {
              window.__TAURI_INTERNALS__.invoke("receive_youtube_message", { msg: data })
-               .catch(e => console.error("Tauri emit error:", e));
+               .catch(e => tauriLog("Emit error: " + e));
           } else {
-             console.log("No Tauri internals found. Cannot emit data.");
+             tauriLog("No Tauri internals found. Cannot emit data.");
           }
         }
 
         function scrapeChat() {
           const items = document.querySelectorAll('yt-live-chat-text-message-renderer');
+          tauriLog(`Scraping... found ${items.length} items`);
+          
           if (items.length === 0) return;
           
           let startIndex = 0;
@@ -58,6 +72,7 @@ async fn spawn_youtube_webview(app: AppHandle, video_id: String) -> Result<(), S
             });
             
             if (message !== '') {
+               tauriLog(`Emitting message from ${authorName}`);
                tauriEmit({
                   authorName: authorName,
                   authorId: authorName,
@@ -70,8 +85,8 @@ async fn spawn_youtube_webview(app: AppHandle, video_id: String) -> Result<(), S
             }
           }
         }
-        setInterval(scrapeChat, 500);
-        console.log("YouTube Chat Scraper Initialized.");
+        setInterval(scrapeChat, 2000);
+        tauriLog("YouTube Chat Scraper Initialized.");
     "#;
 
     if let Some(w) = app.get_webview_window("youtube-scraper") {
@@ -106,7 +121,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             spawn_youtube_webview, 
             close_youtube_webview,
-            receive_youtube_message
+            receive_youtube_message,
+            log_from_webview
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
