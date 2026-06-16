@@ -1,15 +1,5 @@
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, Emitter};
 
-#[tauri::command]
-fn receive_youtube_message(app: AppHandle, msg: serde_json::Value) {
-    println!("[RUST] Received youtube message: {:?}", msg);
-    let _ = app.emit("youtube-chat-message", msg);
-}
-
-#[tauri::command]
-fn log_from_webview(msg: String) {
-    println!("[YouTube Webview]: {}", msg);
-}
 
 #[tauri::command]
 async fn spawn_youtube_webview(app: AppHandle, video_id: String) -> Result<(), String> {
@@ -19,16 +9,14 @@ async fn spawn_youtube_webview(app: AppHandle, video_id: String) -> Result<(), S
         
         function tauriLog(msg) {
           console.log("[TAURI_LOG]: " + msg);
-          if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke) {
-             window.__TAURI_INTERNALS__.invoke("log_from_webview", { msg: String(msg) })
-               .catch(e => console.error("TauriLog invoke error: ", e));
-          }
         }
 
         function tauriEmit(data) {
           if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke) {
-             window.__TAURI_INTERNALS__.invoke("receive_youtube_message", { msg: data })
-               .catch(e => console.error("Emit error: ", e));
+             window.__TAURI_INTERNALS__.invoke("plugin:event|emit", {
+                 event: "youtube-chat-message",
+                 payload: data
+             }).catch(e => console.error("Emit error: ", e));
           } else {
              console.log("No Tauri internals found. Cannot emit data.");
           }
@@ -125,9 +113,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             spawn_youtube_webview, 
-            close_youtube_webview,
-            receive_youtube_message,
-            log_from_webview
+            close_youtube_webview
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

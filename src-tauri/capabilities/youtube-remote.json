@@ -7,7 +7,6 @@
   "permissions": [
     "core:default",
     "core:event:default",
-    "core:event:allow-emit",
-    "stream-chat-aggregator:default"
+    "core:event:allow-emit"
   ]
 }
