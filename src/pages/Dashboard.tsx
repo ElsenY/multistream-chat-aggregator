@@ -77,6 +77,7 @@ export function Dashboard() {
           channel={youtube.channel}
           error={youtube.error}
           onConnect={(videoId) => {
+            console.log("connecting to youtube stream")
             if (youtubeClient) youtubeClient.disconnect();
             youtubeClient = new YouTubeChatClient(
               (msg: ChatMessage) => addMessage(msg),
@@ -90,6 +91,7 @@ export function Dashboard() {
             youtubeClient.connectToVideo(videoId);
           }}
           onDisconnect={() => {
+            console.log("connecting to youtube str12312eam")
             youtubeClient?.disconnect();
             youtubeClient = null;
           }}

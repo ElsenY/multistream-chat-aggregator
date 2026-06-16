@@ -97,10 +97,13 @@ async fn spawn_youtube_webview(app: AppHandle, video_id: String) -> Result<(), S
 
     let _webview = WebviewWindowBuilder::new(&app, "youtube-scraper", WebviewUrl::External(url_parsed))
         .title("YouTube Scraper")
-        .visible(false)
+        .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        .visible(true)
         .initialization_script(init_script)
         .build()
         .map_err(|e| e.to_string())?;
+
+    _webview.open_devtools();
 
     Ok(())
 }

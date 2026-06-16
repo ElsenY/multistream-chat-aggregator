@@ -24,6 +24,7 @@ export class YouTubeChatClient {
   }
 
   async connectToVideo(urlOrId: string) {
+    console.log("connecting to youtube stream")
     this.videoId = this.extractVideoId(urlOrId);
     this.shouldPoll = true;
     this.onStatusChange('connecting');
@@ -68,7 +69,7 @@ export class YouTubeChatClient {
       this.unlistenMessage();
       this.unlistenMessage = null;
     }
-    
+
     try {
       await invoke('close_youtube_webview');
     } catch (e) {
