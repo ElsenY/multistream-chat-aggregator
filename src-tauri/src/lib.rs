@@ -1,18 +1,23 @@
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, Emitter};
+
+#[tauri::command]
+fn receive_youtube_message(app: AppHandle, msg: serde_json::Value) {
+    let _ = app.emit("youtube-chat-message", msg);
+}
 
 #[tauri::command]
 async fn spawn_youtube_webview(app: AppHandle, video_id: String) -> Result<(), String> {
     let url = format!("https://www.youtube.com/live_chat?v={}&dark_theme=1", video_id);
     let init_script = r#"
         let lastScrapedId = '';
-        function getTauriEmit() {
-          if (window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.emit) {
-            return window.__TAURI__.event.emit;
+        
+        function tauriEmit(data) {
+          if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke) {
+             window.__TAURI_INTERNALS__.invoke("receive_youtube_message", { msg: data })
+               .catch(e => console.error("Tauri emit error:", e));
+          } else {
+             console.log("No Tauri internals found. Cannot emit data.");
           }
-          if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.emit) {
-            return window.__TAURI_INTERNALS__.emit;
-          }
-          return null;
         }
 
         function scrapeChat() {
@@ -31,8 +36,6 @@ async fn spawn_youtube_webview(app: AppHandle, video_id: String) -> Result<(), S
              startIndex = Math.max(0, items.length - 10);
           }
 
-          const emitFn = getTauriEmit();
-          
           for (let i = startIndex; i < items.length; i++) {
             const node = items[i];
             lastScrapedId = node.id;
@@ -54,16 +57,16 @@ async fn spawn_youtube_webview(app: AppHandle, video_id: String) -> Result<(), S
                else isSponsor = true;
             });
             
-            if (emitFn && message !== '') {
-               emitFn('youtube-chat-message', {
-                  authorName,
+            if (message !== '') {
+               tauriEmit({
+                  authorName: authorName,
                   authorId: authorName,
-                  message,
-                  isMod,
-                  isOwner,
-                  isSponsor,
+                  message: message,
+                  isMod: isMod,
+                  isOwner: isOwner,
+                  isSponsor: isSponsor,
                   timestamp: Date.now()
-               }).catch(e => console.error('Tauri emit error:', e));
+               });
             }
           }
         }
@@ -100,7 +103,11 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![spawn_youtube_webview, close_youtube_webview])
+        .invoke_handler(tauri::generate_handler![
+            spawn_youtube_webview, 
+            close_youtube_webview,
+            receive_youtube_message
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
