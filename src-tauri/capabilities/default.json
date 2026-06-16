@@ -1,0 +1,17 @@
+{
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:webview:allow-create-webview",
+    "core:window:allow-create",
+    "core:event:default",
+    "opener:default",
+    "http:default",
+    {
+      "identifier": "http:default",
+      "allow": [{ "url": "https://*.youtube.com/*" }]
+    }
+  ]
+}

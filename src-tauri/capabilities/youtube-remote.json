@@ -1,0 +1,11 @@
+{
+  "identifier": "youtube-remote-capability",
+  "windows": ["youtube-scraper"],
+  "remote": {
+    "urls": ["https://*.youtube.com"]
+  },
+  "permissions": [
+    "core:event:default",
+    "core:event:allow-emit"
+  ]
+}

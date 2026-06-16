@@ -1,0 +1,106 @@
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+
+#[tauri::command]
+async fn spawn_youtube_webview(app: AppHandle, video_id: String) -> Result<(), String> {
+    let url = format!("https://www.youtube.com/live_chat?v={}&dark_theme=1", video_id);
+    let init_script = r#"
+        let lastScrapedId = '';
+        function getTauriEmit() {
+          if (window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.emit) {
+            return window.__TAURI__.event.emit;
+          }
+          if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.emit) {
+            return window.__TAURI_INTERNALS__.emit;
+          }
+          return null;
+        }
+
+        function scrapeChat() {
+          const items = document.querySelectorAll('yt-live-chat-text-message-renderer');
+          if (items.length === 0) return;
+          
+          let startIndex = 0;
+          if (lastScrapedId !== '') {
+             for (let i = items.length - 1; i >= 0; i--) {
+                if (items[i].id === lastScrapedId) {
+                   startIndex = i + 1;
+                   break;
+                }
+             }
+          } else {
+             startIndex = Math.max(0, items.length - 10);
+          }
+
+          const emitFn = getTauriEmit();
+          
+          for (let i = startIndex; i < items.length; i++) {
+            const node = items[i];
+            lastScrapedId = node.id;
+            
+            const authorNameNode = node.querySelector('#author-name');
+            const messageNode = node.querySelector('#message');
+            const authorName = authorNameNode ? authorNameNode.textContent.trim() : 'Unknown';
+            const message = messageNode ? messageNode.textContent.trim() : '';
+            
+            const badges = node.querySelectorAll('.yt-live-chat-author-badge-renderer img');
+            let isMod = false;
+            let isOwner = false;
+            let isSponsor = false;
+            
+            badges.forEach(img => {
+               const alt = (img.alt || '').toLowerCase();
+               if (alt.includes('moderator')) isMod = true;
+               else if (alt.includes('owner')) isOwner = true;
+               else isSponsor = true;
+            });
+            
+            if (emitFn && message !== '') {
+               emitFn('youtube-chat-message', {
+                  authorName,
+                  authorId: authorName,
+                  message,
+                  isMod,
+                  isOwner,
+                  isSponsor,
+                  timestamp: Date.now()
+               }).catch(e => console.error('Tauri emit error:', e));
+            }
+          }
+        }
+        setInterval(scrapeChat, 500);
+        console.log("YouTube Chat Scraper Initialized.");
+    "#;
+
+    if let Some(w) = app.get_webview_window("youtube-scraper") {
+        let _ = w.close();
+    }
+
+    let url_parsed = tauri::Url::parse(&url).map_err(|e| e.to_string())?;
+
+    let _webview = WebviewWindowBuilder::new(&app, "youtube-scraper", WebviewUrl::External(url_parsed))
+        .title("YouTube Scraper")
+        .visible(false)
+        .initialization_script(init_script)
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn close_youtube_webview(app: AppHandle) -> Result<(), String> {
+    if let Some(w) = app.get_webview_window("youtube-scraper") {
+        let _ = w.close();
+    }
+    Ok(())
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![spawn_youtube_webview, close_youtube_webview])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
