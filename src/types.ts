@@ -20,6 +20,8 @@ export interface AppSettings {
   overlayFadeTime: number;
   overlayMaxMessages: number;
   obsPort: number;
+  youtubeMode: 'scraper' | 'api';
+  youtubeApiKey?: string;
 }
 
 export type PlatformFilter = 'all' | 'twitch' | 'youtube';

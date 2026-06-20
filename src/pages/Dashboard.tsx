@@ -3,11 +3,12 @@ import { useAppStore } from '../store';
 import { ConnectionCard } from '../components/ConnectionCard';
 import { TwitchChatClient } from '../services/twitch';
 import { YouTubeChatClient } from '../services/youtube';
+import { YouTubeApiChatClient } from '../services/youtubeApi';
 import type { ChatMessage, ConnectionStatus } from '../types';
 
 // Singleton clients — survive re-renders
 let twitchClient: TwitchChatClient | null = null;
-let youtubeClient: YouTubeChatClient | null = null;
+let youtubeClient: YouTubeChatClient | YouTubeApiChatClient | null = null;
 
 export function Dashboard() {
   const addMessage = useAppStore((s) => s.addMessage);
@@ -79,16 +80,22 @@ export function Dashboard() {
           onConnect={(videoId) => {
             console.log("connecting to youtube stream")
             if (youtubeClient) youtubeClient.disconnect();
-            youtubeClient = new YouTubeChatClient(
-              (msg: ChatMessage) => addMessage(msg),
-              (status: string, error?: string) =>
+            
+            const onMsg = (msg: ChatMessage) => addMessage(msg);
+            const onStatus = (status: string, error?: string) =>
                 setYoutubeConnection({
                   status: status as ConnectionStatus,
                   channel: youtubeClient?.getBroadcastTitle() || videoId,
                   error,
-                })
-            );
-            youtubeClient.connectToVideo(videoId);
+                });
+
+            if (settings.youtubeMode === 'api') {
+              youtubeClient = new YouTubeApiChatClient(settings.youtubeApiKey || '', onMsg, onStatus) as any;
+            } else {
+              youtubeClient = new YouTubeChatClient(onMsg, onStatus) as any;
+            }
+            
+            youtubeClient?.connectToVideo(videoId);
           }}
           onDisconnect={() => {
             console.log("connecting to youtube str12312eam")
@@ -97,6 +104,8 @@ export function Dashboard() {
           }}
           inputLabel="Video ID or URL"
           inputPlaceholder="e.g. dQw4w9WgXcQ or full URL"
+          requiresApiKey={settings.youtubeMode === 'api'}
+          apiKeyMissing={!settings.youtubeApiKey}
         />
       </div>
 

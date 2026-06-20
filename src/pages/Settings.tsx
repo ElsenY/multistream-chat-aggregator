@@ -35,7 +35,59 @@ export function Settings() {
       </div>
 
       <div className="settings-page">
-        {/* YouTube configuration is now handled via .env and Dashboard */}
+        {/* YouTube */}
+        <div className="glass-card" style={{ marginBottom: 'var(--space-xl)' }}>
+          <div className="settings-section">
+            <h2 className="settings-section-title" style={{ color: 'var(--accent-youtube)' }}>
+              ▶ YouTube Configuration
+            </h2>
+            <p className="settings-section-desc">
+              Choose how you want to connect to YouTube Live Chat.
+            </p>
+
+            <div className="settings-field">
+              <label>Connection Mode</label>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="youtubeMode"
+                    value="scraper"
+                    checked={settings.youtubeMode === 'scraper'}
+                    onChange={() => updateSettings({ youtubeMode: 'scraper' })}
+                  />
+                  Webview Scraper (No API Key needed)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="youtubeMode"
+                    value="api"
+                    checked={settings.youtubeMode === 'api'}
+                    onChange={() => updateSettings({ youtubeMode: 'api' })}
+                  />
+                  Data API v3 (Requires API Key)
+                </label>
+              </div>
+            </div>
+
+            {settings.youtubeMode === 'api' && (
+              <div className="settings-field" style={{ marginTop: '1rem' }}>
+                <label htmlFor="youtube-api-key">YouTube Data API v3 Key</label>
+                <input
+                  id="youtube-api-key"
+                  type="password"
+                  placeholder="AIzaSy..."
+                  value={settings.youtubeApiKey || ''}
+                  onChange={(e) => updateSettings({ youtubeApiKey: e.target.value })}
+                />
+                <span className="hint">
+                  Required for Data API mode. Get this from the Google Cloud Console.
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Twitch */}
         <div className="glass-card" style={{ marginBottom: 'var(--space-xl)' }}>

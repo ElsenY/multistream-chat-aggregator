@@ -31,6 +31,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   overlayFadeTime: 15,
   overlayMaxMessages: 20,
   obsPort: 9527,
+  youtubeMode: 'scraper',
+  youtubeApiKey: '',
 };
 
 function loadSettings(): AppSettings {
