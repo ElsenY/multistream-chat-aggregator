@@ -96,6 +96,8 @@ export class YouTubeApiChatClient {
       this.nextPageToken = data.nextPageToken;
       // The API specifies how long to wait before the next request
       const pollingIntervalMillis = data.pollingIntervalMillis || 3000;
+      
+      console.log(`[YouTube API] Polled ${data.items ? data.items.length : 0} messages. Next poll in ${pollingIntervalMillis}ms...`);
 
       if (data.items) {
         for (const item of data.items) {
