@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api/core';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { ChatMessage } from '../types';
 
 export class YouTubeApiChatClient {
@@ -7,10 +9,8 @@ export class YouTubeApiChatClient {
   private onMessage: (msg: ChatMessage) => void;
   private onStatusChange: (status: string, error?: string) => void;
   
-  private messageId: number = 0;
-  private pollIntervalId: any = null;
-  private isDisconnecting: boolean = false;
-  private nextPageToken: string = '';
+  private unlistenMessage: UnlistenFn | null = null;
+  private isConnectedFlag: boolean = false;
 
   constructor(
     apiKey: string,
@@ -28,22 +28,17 @@ export class YouTubeApiChatClient {
     return match ? match[1] : urlOrId;
   }
 
-  private generateColor(username: string): string {
-    let hash = 0;
-    for (let i = 0; i < username.length; i++) {
-      hash = username.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const hue = Math.abs(hash % 360);
-    return `hsl(${hue}, 80%, 65%)`;
-  }
-
   async connectToVideo(urlOrId: string) {
     this.videoId = this.extractVideoId(urlOrId);
-    this.isDisconnecting = false;
     this.onStatusChange('connecting');
+    this.isConnectedFlag = true;
 
     try {
-      // 1. Get Live Chat ID
+      // 1. Clean up existing stream
+      await this.disconnect();
+      this.isConnectedFlag = true;
+
+      // 2. Fetch the Live Chat ID from the video info
       const videoRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${this.videoId}&key=${this.apiKey}`);
       const videoData = await videoRes.json();
 
@@ -61,90 +56,49 @@ export class YouTubeApiChatClient {
       }
 
       this.liveChatId = liveStreamingDetails.activeLiveChatId;
-      
+
+      // 3. Register the Tauri event listener
+      this.unlistenMessage = await listen<ChatMessage>('youtube-grpc-message', (event) => {
+        this.onMessage(event.payload);
+      });
+
+      // 4. Start the gRPC stream in the Rust backend
+      await invoke('start_youtube_grpc_stream', {
+        apiKey: this.apiKey,
+        liveChatId: this.liveChatId,
+      });
+
       this.onStatusChange('connected');
-      
-      // 2. Start polling messages
-      this.pollMessages();
 
     } catch (e: any) {
-      console.error('YouTube API Error:', e);
+      console.error('YouTube API Connect Error:', e);
+      this.isConnectedFlag = false;
       this.onStatusChange('error', e.message || 'Failed to connect via API');
     }
   }
 
-  private async pollMessages() {
-    if (this.isDisconnecting) return;
+  async disconnect() {
+    this.isConnectedFlag = false;
+    
+    if (this.unlistenMessage) {
+      this.unlistenMessage();
+      this.unlistenMessage = null;
+    }
 
     try {
-      let url = `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${this.liveChatId}&part=snippet,authorDetails&key=${this.apiKey}`;
-      if (this.nextPageToken) {
-        url += `&pageToken=${this.nextPageToken}`;
-      }
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data.error) {
-        if (data.error.errors && data.error.errors[0].reason === 'quotaExceeded') {
-           throw new Error('YouTube API Quota Exceeded! Check your Google Cloud limits.');
-        }
-        throw new Error(data.error.message || 'Polling error');
-      }
-
-      // Next page token
-      this.nextPageToken = data.nextPageToken;
-      // The API specifies how long to wait before the next request
-      const pollingIntervalMillis = data.pollingIntervalMillis || 3000;
-      
-      console.log(`[YouTube API] Polled ${data.items ? data.items.length : 0} messages. Next poll in ${pollingIntervalMillis}ms...`);
-
-      if (data.items) {
-        for (const item of data.items) {
-          const author = item.authorDetails;
-          const snippet = item.snippet;
-
-          if (snippet.type === 'textMessageEvent') {
-            const chatMsg: ChatMessage = {
-              id: item.id,
-              platform: 'youtube',
-              username: author.channelId,
-              displayName: author.displayName,
-              message: snippet.displayMessage,
-              timestamp: new Date(snippet.publishedAt).getTime(),
-              color: this.generateColor(author.displayName),
-              isMod: author.isChatModerator,
-              isOwner: author.isChatOwner,
-              isSubscriber: author.isChatSponsor
-            };
-            this.onMessage(chatMsg);
-          }
-        }
-      }
-
-      if (!this.isDisconnecting) {
-        this.pollIntervalId = setTimeout(() => this.pollMessages(), pollingIntervalMillis);
-      }
-
-    } catch (e: any) {
-      console.error('YouTube API Polling Error:', e);
-      // Wait before retrying or show error
-      if (!this.isDisconnecting) {
-        this.pollIntervalId = setTimeout(() => this.pollMessages(), 5000);
-      }
+      await invoke('close_youtube_grpc_stream');
+    } catch (e) {
+      console.error('Error stopping YouTube gRPC stream:', e);
     }
-  }
-
-  disconnect() {
-    this.isDisconnecting = true;
-    if (this.pollIntervalId) {
-      clearTimeout(this.pollIntervalId);
-      this.pollIntervalId = null;
-    }
+    
     this.onStatusChange('disconnected');
   }
 
   getBroadcastTitle(): string {
     return this.videoId ? `yt:${this.videoId}` : '';
+  }
+
+  isConnected(): boolean {
+    return this.isConnectedFlag;
   }
 }
