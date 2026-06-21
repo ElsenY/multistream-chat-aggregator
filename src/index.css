@@ -909,7 +909,7 @@ input::placeholder, textarea::placeholder {
   -webkit-backdrop-filter: blur(8px);
   border-radius: var(--radius-md);
   animation: overlayMessageIn 0.4s ease-out;
-  font-size: var(--font-size-sm);
+  font-size: calc(var(--font-size-sm) * 2.5);
 }
 
 .overlay-message.fade-out {
@@ -935,11 +935,11 @@ input::placeholder, textarea::placeholder {
 }
 
 .overlay-platform-dot {
-  width: 4px;
+  width: 10px;
   border-radius: var(--radius-full);
   flex-shrink: 0;
-  margin-top: 4px;
-  margin-bottom: 4px;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .overlay-platform-dot.twitch {
