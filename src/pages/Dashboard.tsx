@@ -135,7 +135,7 @@ export function Dashboard() {
 
       {counts.total > 0 && (
         <div style={{ marginTop: 'var(--space-lg)' }}>
-          <button className="btn btn-ghost btn-sm" onClick={clearMessages} id="clear-messages-btn">
+          <button className="btn btn-ghost btn-sm" onClick={() => clearMessages()} id="clear-messages-btn">
             🗑️ Clear all messages
           </button>
         </div>

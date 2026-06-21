@@ -20,3 +20,7 @@ src-tauri/target/
 # OS
 .DS_Store
 Thumbs.db
+
+# gRPC / Discovery docs
+src-tauri/discovery.json
+tsconfig.tsbuildinfo
