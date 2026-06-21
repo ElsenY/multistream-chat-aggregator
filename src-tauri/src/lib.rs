@@ -192,6 +192,7 @@ async fn spawn_youtube_webview(app: AppHandle, video_id: String) -> Result<(), S
         .build()
         .map_err(|e| e.to_string())?;
 
+    #[cfg(debug_assertions)]
     _webview.open_devtools();
 
     Ok(())
