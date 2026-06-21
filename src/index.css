@@ -628,7 +628,8 @@ input::placeholder, textarea::placeholder {
 .chat-page {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   padding: 0;
 }
 
@@ -789,7 +790,7 @@ input::placeholder, textarea::placeholder {
   color: var(--text-tertiary);
   flex-shrink: 0;
   margin-top: 2px;
-  opacity: 0;
+  opacity: 0.6;
   transition: opacity var(--transition-fast);
 }
 
@@ -891,7 +892,12 @@ input::placeholder, textarea::placeholder {
   gap: 4px;
   padding: var(--space-md);
   max-height: 100vh;
-  overflow: hidden;
+  overflow-y: auto;
+  scrollbar-width: none; /* Hide scrollbars for Firefox */
+}
+
+.overlay-chat::-webkit-scrollbar {
+  display: none; /* Hide scrollbars for Chrome, Safari, and Opera */
 }
 
 .overlay-message {

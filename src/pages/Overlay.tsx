@@ -12,6 +12,7 @@ export function Overlay() {
   const settings = useAppStore((s) => s.settings);
   const [overlayMessages, setOverlayMessages] = useState<OverlayMessage[]>([]);
   const lastProcessedRef = useRef(0);
+  const chatRef = useRef<HTMLDivElement>(null);
 
   // Add new messages to overlay
   useEffect(() => {
@@ -62,6 +63,13 @@ export function Overlay() {
     return () => clearInterval(interval);
   }, [settings.overlayFadeTime]);
 
+  // Auto-scroll overlay chat to bottom on new messages
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [overlayMessages]);
+
   const navigate = useNavigate();
 
   return (
@@ -73,7 +81,7 @@ export function Overlay() {
       >
         ← Back
       </button>
-      <div className="overlay-chat">
+      <div className="overlay-chat" ref={chatRef}>
         {overlayMessages.map((msg) => (
           <div
             key={msg.id}
