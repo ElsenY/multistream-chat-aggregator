@@ -45,7 +45,7 @@ function loadSettings(): AppSettings {
   return DEFAULT_SETTINGS;
 }
 
-const inTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
+const inTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__?.ipc;
 
 // BroadcastChannel to sync messages across different views (e.g. OBS Docks and Browser Sources)
 const syncChannel = typeof window !== 'undefined' ? new BroadcastChannel('sca-messages-sync') : null;

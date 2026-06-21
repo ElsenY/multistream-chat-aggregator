@@ -14,7 +14,7 @@ function AppLayout() {
   const settings = useAppStore((s) => s.settings);
 
   useEffect(() => {
-    const inTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
+    const inTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__?.ipc;
     if (inTauri) {
       import('@tauri-apps/api/core').then(({ invoke }) => {
         invoke('broadcast_settings', { settings }).catch((e) =>
