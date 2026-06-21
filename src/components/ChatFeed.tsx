@@ -67,7 +67,7 @@ export function ChatFeed() {
         </span>
       </div>
 
-      <div className="relative" style={{ flex: 1, overflow: 'hidden' }}>
+      <div className="relative" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div className="chat-feed" ref={feedRef} onScroll={handleScroll}>
           {filteredMessages.length === 0 ? (
             <div className="chat-feed-empty">
