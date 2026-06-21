@@ -18,9 +18,10 @@ export function Settings() {
   }, [saved]);
 
   const handleSave = () => {
+    const fade = parseInt(overlayFadeTime);
     updateSettings({
       maxMessages: parseInt(maxMessages) || 500,
-      overlayFadeTime: parseInt(overlayFadeTime) || 15,
+      overlayFadeTime: fade === 0 ? 0 : (fade || 15),
       overlayMaxMessages: parseInt(overlayMaxMessages) || 20,
     });
     setSaved(true);
@@ -142,11 +143,11 @@ export function Settings() {
                 type="number"
                 value={overlayFadeTime}
                 onChange={(e) => setOverlayFadeTime(e.target.value)}
-                min="5"
+                min="0"
                 max="120"
               />
               <span className="hint">
-                Messages will fade out after this many seconds. Default: 15.
+                Messages will fade out after this many seconds. Set to 0 to disable fading (messages never disappear). Default: 15.
               </span>
             </div>
 

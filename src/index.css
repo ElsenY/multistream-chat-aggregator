@@ -1065,3 +1065,47 @@ input::placeholder, textarea::placeholder {
 .font-mono { font-family: 'SF Mono', 'Fira Code', monospace; }
 .w-full { width: 100%; }
 .relative { position: relative; }
+
+/* Back button on Overlay */
+.overlay-back-btn {
+  position: fixed;
+  top: var(--space-md);
+  left: var(--space-md);
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 100;
+  transition: all var(--transition-base);
+  opacity: 0.05; /* Fade out by default, almost invisible in OBS unless hovered */
+}
+
+.overlay-back-btn:hover {
+  opacity: 0.9;
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
+}
+
+.overlay-back-btn:active {
+  transform: translateY(0);
+}
+
+/* Sidebar Badge */
+.sidebar-badge {
+  background: var(--accent-primary);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  margin-left: auto;
+  box-shadow: 0 0 6px rgba(108, 92, 231, 0.4);
+}

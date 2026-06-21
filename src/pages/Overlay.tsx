@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import type { ChatMessage } from '../types';
 
@@ -37,6 +38,12 @@ export function Overlay() {
 
   // Fade out old messages
   useEffect(() => {
+    if (settings.overlayFadeTime === 0) {
+      // If set to 0, never fade out and keep all messages
+      setOverlayMessages((prev) => prev.map((m) => ({ ...m, fadeOut: false })));
+      return;
+    }
+
     const interval = setInterval(() => {
       const now = Date.now();
       const fadeTime = settings.overlayFadeTime * 1000;
@@ -55,8 +62,17 @@ export function Overlay() {
     return () => clearInterval(interval);
   }, [settings.overlayFadeTime]);
 
+  const navigate = useNavigate();
+
   return (
     <div className="overlay-page">
+      <button
+        className="overlay-back-btn"
+        onClick={() => navigate('/')}
+        title="Back to Dashboard"
+      >
+        ← Back
+      </button>
       <div className="overlay-chat">
         {overlayMessages.map((msg) => (
           <div

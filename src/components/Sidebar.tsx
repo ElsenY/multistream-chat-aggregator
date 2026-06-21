@@ -4,6 +4,7 @@ import { useAppStore } from '../store';
 export function Sidebar() {
   const twitch = useAppStore((s) => s.twitch);
   const youtube = useAppStore((s) => s.youtube);
+  const messages = useAppStore((s) => s.messages);
 
   return (
     <aside className="sidebar">
@@ -34,6 +35,9 @@ export function Sidebar() {
         >
           <span className="sidebar-nav-icon">💭</span>
           Chat
+          {messages.length > 0 && (
+            <span className="sidebar-badge">{messages.length}</span>
+          )}
         </NavLink>
 
         <NavLink
