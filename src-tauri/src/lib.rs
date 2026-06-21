@@ -34,12 +34,13 @@ struct ChatMessage {
     display_name: String,
     message: String,
     timestamp: u64,
+    #[serde(default)]
     color: String,
-    #[serde(rename = "isMod")]
+    #[serde(rename = "isMod", default)]
     is_mod: bool,
-    #[serde(rename = "isOwner")]
+    #[serde(rename = "isOwner", default)]
     is_owner: bool,
-    #[serde(rename = "isSubscriber")]
+    #[serde(rename = "isSubscriber", default)]
     is_subscriber: bool,
 }
 
