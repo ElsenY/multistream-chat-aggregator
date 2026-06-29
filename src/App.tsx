@@ -7,6 +7,7 @@ import { ChatPage } from './pages/ChatPage';
 import { Settings } from './pages/Settings';
 import { Overlay } from './pages/Overlay';
 import { useAppStore } from './store';
+import { isInTauri } from './utils/environment';
 
 function AppLayout() {
   const location = useLocation();
@@ -15,8 +16,7 @@ function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
-    const inTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__?.ipc && !(window as any).__TAURI_INTERNALS__?.isMock;
-    if (inTauri) {
+    if (isInTauri()) {
       import('@tauri-apps/api/core').then(({ invoke }) => {
         invoke('broadcast_settings', { settings }).catch((e) =>
           console.error('Failed to broadcast settings:', e)

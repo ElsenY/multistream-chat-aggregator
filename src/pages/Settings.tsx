@@ -9,6 +9,7 @@ export function Settings() {
   const [overlayFadeTime, setOverlayFadeTime] = useState(String(settings.overlayFadeTime));
   const [overlayMaxMessages, setOverlayMaxMessages] = useState(String(settings.overlayMaxMessages));
   const [saved, setSaved] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (saved) {
@@ -163,6 +164,43 @@ export function Settings() {
               />
               <span className="hint">
                 Maximum messages visible in the overlay at once. Default: 20.
+              </span>
+            </div>
+
+            <div className="settings-field" style={{ marginTop: 'var(--space-md)' }}>
+              <label>OBS Browser Source URL</label>
+              <div style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: '0.5rem' }}>
+                <input
+                  type="text"
+                  readOnly
+                  value={import.meta.env.DEV ? 'http://localhost:1420/#/overlay' : 'http://127.0.0.1:9527/#/overlay'}
+                  style={{
+                    flex: 1,
+                    fontFamily: 'monospace',
+                    fontSize: '12px',
+                    padding: '0.5rem',
+                    background: 'var(--bg-glass-input, rgba(255, 255, 255, 0.05))',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: 'var(--text-primary)',
+                  }}
+                />
+                <button
+                  className="btn btn-secondary"
+                  style={{ whiteSpace: 'nowrap', minWidth: '90px' }}
+                  onClick={() => {
+                    const url = import.meta.env.DEV ? 'http://localhost:1420/#/overlay' : 'http://127.0.0.1:9527/#/overlay';
+                    navigator.clipboard.writeText(url);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                >
+                  {copied ? '✓ Copied' : 'Copy URL'}
+                </button>
+              </div>
+              <span className="hint">
+                Add this URL as a <strong>Browser Source</strong> in OBS.
+                {import.meta.env.DEV && " (During development, port 1420 is used to support hot-reloading/live style changes.)"}
               </span>
             </div>
           </div>

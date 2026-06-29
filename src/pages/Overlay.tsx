@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import type { ChatMessage } from '../types';
+import { isInTauri } from '../utils/environment';
 
 interface OverlayMessage extends ChatMessage {
   fadeOut: boolean;
@@ -74,13 +75,15 @@ export function Overlay() {
 
   return (
     <div className="overlay-page">
-      <button
-        className="overlay-back-btn"
-        onClick={() => navigate('/')}
-        title="Back to Dashboard"
-      >
-        ← Back
-      </button>
+      {isInTauri() && (
+        <button
+          className="overlay-back-btn"
+          onClick={() => navigate('/')}
+          title="Back to Dashboard"
+        >
+          ← Back
+        </button>
+      )}
       <div className="overlay-chat" ref={chatRef}>
         {overlayMessages.map((msg) => (
           <div

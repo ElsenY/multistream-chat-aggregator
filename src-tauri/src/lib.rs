@@ -1,4 +1,5 @@
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, Emitter};
+use tauri::{AppHandle, Asset, Manager, WebviewUrl, WebviewWindowBuilder, Emitter};
+use tiny_http::{Header, Response as HttpResponse, Server};
 use std::sync::{Mutex, Arc};
 use std::str::FromStr;
 use tokio::sync::oneshot;
@@ -396,13 +397,74 @@ async fn broadcast_settings(
     Ok(())
 }
 
+fn obs_request_path(url: &str) -> String {
+    let path = url.split('?').next().unwrap_or("/");
+    if path.is_empty() { "/".to_string() } else { path.to_string() }
+}
+
+fn respond_with_asset(request: tiny_http::Request, asset: Asset) {
+    let mut response = HttpResponse::from_data(asset.bytes);
+    if let Ok(header) = Header::from_bytes(b"Content-Type", asset.mime_type.as_bytes()) {
+        response.add_header(header);
+    }
+    if let Some(csp) = asset.csp_header {
+        if let Ok(header) = Header::from_bytes(b"Content-Security-Policy", csp.as_bytes()) {
+            response.add_header(header);
+        }
+    }
+    if let Ok(header) = Header::from_bytes(b"Cache-Control", b"no-cache") {
+        response.add_header(header);
+    }
+    let _ = request.respond(response);
+}
+
+fn spawn_obs_static_server(app: &AppHandle) {
+    let asset_resolver = app.asset_resolver();
+    std::thread::spawn(move || {
+        let server = match Server::http("127.0.0.1:9527") {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("Failed to bind OBS UI server to 127.0.0.1:9527: {:?}", e);
+                return;
+            }
+        };
+        println!("OBS UI server listening on http://127.0.0.1:9527");
+
+        for request in server.incoming_requests() {
+            let mut path = obs_request_path(request.url());
+
+            if path == "/" {
+                path = "/index.html".to_string();
+            }
+
+            let mut asset = asset_resolver.get(path.clone());
+            let is_spa_route = path
+                .rsplit('/')
+                .next()
+                .map(|segment| !segment.contains('.'))
+                .unwrap_or(true);
+
+            if asset.is_none() && is_spa_route {
+                asset = asset_resolver.get("/index.html".to_string());
+            }
+
+            if let Some(asset) = asset {
+                respond_with_asset(request, asset);
+            } else {
+                let _ = request.respond(HttpResponse::empty(404));
+            }
+        }
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_localhost::Builder::new(9527).build())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            spawn_obs_static_server(app.handle());
+
             let (tx, _rx) = broadcast::channel::<String>(100);
             let sse_tx = tx.clone();
             let last_settings = Arc::new(Mutex::new(None));
