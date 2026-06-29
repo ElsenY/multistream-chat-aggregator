@@ -3901,8 +3901,8 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-http",
- "tauri-plugin-localhost",
  "tauri-plugin-opener",
+ "tiny_http",
  "tokio",
  "tokio-stream",
  "tonic",
@@ -4269,21 +4269,6 @@ dependencies = [
  "tokio",
  "url",
  "urlpattern",
-]
-
-[[package]]
-name = "tauri-plugin-localhost"
-version = "2.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c8d72c024121b1a3d9268293d49a56baf01a8c785561c85d17872588b839e55"
-dependencies = [
- "http 1.4.2",
- "log",
- "serde",
- "serde_json",
- "tauri",
- "thiserror 2.0.18",
- "tiny_http",
 ]
 
 [[package]]

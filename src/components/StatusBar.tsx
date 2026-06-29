@@ -57,8 +57,8 @@ export function StatusBar() {
 
       <div style={{ flex: 1 }} />
 
-      <div className="statusbar-item font-mono">
-        <span>OBS: localhost:9527</span>
+      <div className="statusbar-item font-mono" style={{ fontSize: '11px' }}>
+        <span>OBS Overlay: {import.meta.env.DEV ? 'http://localhost:1420/#/overlay' : 'http://127.0.0.1:9527/#/overlay'}</span>
       </div>
     </div>
   );

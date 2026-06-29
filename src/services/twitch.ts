@@ -102,6 +102,7 @@ export class TwitchChatClient {
       color: tags['color'] || this.generateColor(username),
       isMod: tags['mod'] === '1',
       isSubscriber: tags['subscriber'] === '1',
+      isOwner: username.toLowerCase() === this.channel,
     };
 
     this.onMessage(chatMsg);

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { ChatMessage, PlatformFilter, PlatformConnection, AppSettings } from './types';
+import { isInTauri } from './utils/environment';
 
 interface AppState {
   // Chat messages
@@ -45,8 +46,6 @@ function loadSettings(): AppSettings {
   return DEFAULT_SETTINGS;
 }
 
-const inTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
-
 // BroadcastChannel to sync messages across different views (e.g. OBS Docks and Browser Sources)
 const syncChannel = typeof window !== 'undefined' ? new BroadcastChannel('sca-messages-sync') : null;
 
@@ -58,7 +57,7 @@ export const useAppStore = create<AppState>((set, get) => {
         if (syncChannel) {
           syncChannel.postMessage({ type: 'ADD_MESSAGE', payload: msg });
         }
-        if (inTauri) {
+        if (isInTauri()) {
           import('@tauri-apps/api/core').then(({ invoke }) => {
             invoke('broadcast_chat_message', { msg }).catch((e) =>
               console.error('Failed to broadcast via Rust:', e)
@@ -80,7 +79,7 @@ export const useAppStore = create<AppState>((set, get) => {
         if (syncChannel) {
           syncChannel.postMessage({ type: 'CLEAR_MESSAGES' });
         }
-        if (inTauri) {
+        if (isInTauri()) {
           import('@tauri-apps/api/core').then(({ invoke }) => {
             invoke('clear_chat_messages').catch((e) =>
               console.error('Failed to clear via Rust:', e)
@@ -110,7 +109,7 @@ export const useAppStore = create<AppState>((set, get) => {
           if (syncChannel) {
             syncChannel.postMessage({ type: 'UPDATE_SETTINGS', payload: partial });
           }
-          if (inTauri) {
+          if (isInTauri()) {
             import('@tauri-apps/api/core').then(({ invoke }) => {
               invoke('broadcast_settings', { settings: updated }).catch((e) =>
                 console.error('Failed to broadcast settings:', e)
@@ -154,10 +153,10 @@ if (syncChannel) {
   };
 }
 
-if (typeof window !== 'undefined' && !inTauri) {
+if (typeof window !== 'undefined' && !isInTauri()) {
   const connectSSE = () => {
-    console.log('Connecting to Stream Chat SSE Broadcast Server on http://localhost:9528...');
-    const eventSource = new EventSource('http://localhost:9528');
+    console.log('Connecting to Stream Chat SSE Broadcast Server on http://127.0.0.1:9528...');
+    const eventSource = new EventSource('http://127.0.0.1:9528');
 
     eventSource.onmessage = (event) => {
       if (event.data === 'CLEAR') {

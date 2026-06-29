@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import type { ChatMessage } from '../types';
+import { isInTauri } from '../utils/environment';
 
 interface OverlayMessage extends ChatMessage {
   fadeOut: boolean;
@@ -12,6 +13,7 @@ export function Overlay() {
   const settings = useAppStore((s) => s.settings);
   const [overlayMessages, setOverlayMessages] = useState<OverlayMessage[]>([]);
   const lastProcessedRef = useRef(0);
+  const chatRef = useRef<HTMLDivElement>(null);
 
   // Add new messages to overlay
   useEffect(() => {
@@ -62,18 +64,27 @@ export function Overlay() {
     return () => clearInterval(interval);
   }, [settings.overlayFadeTime]);
 
+  // Auto-scroll overlay chat to bottom on new messages
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [overlayMessages]);
+
   const navigate = useNavigate();
 
   return (
     <div className="overlay-page">
-      <button
-        className="overlay-back-btn"
-        onClick={() => navigate('/')}
-        title="Back to Dashboard"
-      >
-        ← Back
-      </button>
-      <div className="overlay-chat">
+      {isInTauri() && (
+        <button
+          className="overlay-back-btn"
+          onClick={() => navigate('/')}
+          title="Back to Dashboard"
+        >
+          ← Back
+        </button>
+      )}
+      <div className="overlay-chat" ref={chatRef}>
         {overlayMessages.map((msg) => (
           <div
             key={msg.id}

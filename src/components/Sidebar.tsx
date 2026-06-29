@@ -1,7 +1,11 @@
 import { NavLink } from 'react-router-dom';
 import { useAppStore } from '../store';
 
-export function Sidebar() {
+interface SidebarProps {
+  onCollapse: () => void;
+}
+
+export function Sidebar({ onCollapse }: SidebarProps) {
   const twitch = useAppStore((s) => s.twitch);
   const youtube = useAppStore((s) => s.youtube);
   const messages = useAppStore((s) => s.messages);
@@ -62,6 +66,9 @@ export function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
+        <button className="sidebar-collapse-btn" onClick={onCollapse} title="Hide Sidebar">
+          ◀ Hide Sidebar
+        </button>
         <div className="sidebar-connections">
           <div className="sidebar-connection">
             <span
