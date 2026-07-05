@@ -15,6 +15,16 @@ function AppLayout() {
   const settings = useAppStore((s) => s.settings);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Toggle transparent background for OBS overlay
+  useEffect(() => {
+    if (isOverlay) {
+      document.body.classList.add('overlay-mode');
+    } else {
+      document.body.classList.remove('overlay-mode');
+    }
+    return () => document.body.classList.remove('overlay-mode');
+  }, [isOverlay]);
+
   useEffect(() => {
     if (isInTauri()) {
       import('@tauri-apps/api/core').then(({ invoke }) => {

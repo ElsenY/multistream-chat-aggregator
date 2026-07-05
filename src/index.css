@@ -94,6 +94,7 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-primary);
 }
 
 body {
@@ -103,6 +104,12 @@ body {
   line-height: 1.5;
   overflow: hidden;
   min-height: 100vh;
+}
+
+/* Transparent background only for the OBS overlay route (:9527/#/overlay) */
+html:has(body.overlay-mode),
+body.overlay-mode {
+  background: transparent !important;
 }
 
 #root {
