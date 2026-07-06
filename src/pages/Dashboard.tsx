@@ -2,13 +2,12 @@ import { useRef, useCallback } from 'react';
 import { useAppStore } from '../store';
 import { ConnectionCard } from '../components/ConnectionCard';
 import { TwitchChatClient } from '../services/twitch';
-import { YouTubeChatClient } from '../services/youtube';
 import { YouTubeApiChatClient } from '../services/youtubeApi';
 import type { ChatMessage, ConnectionStatus } from '../types';
 
 // Singleton clients — survive re-renders
 let twitchClient: TwitchChatClient | null = null;
-let youtubeClient: YouTubeChatClient | YouTubeApiChatClient | null = null;
+let youtubeClient: YouTubeApiChatClient | null = null;
 
 export function Dashboard() {
   const addMessage = useAppStore((s) => s.addMessage);
@@ -89,12 +88,7 @@ export function Dashboard() {
                   error,
                 });
 
-            if (settings.youtubeMode === 'api') {
-              youtubeClient = new YouTubeApiChatClient(settings.youtubeApiKey || '', onMsg, onStatus) as any;
-            } else {
-              youtubeClient = new YouTubeChatClient(onMsg, onStatus) as any;
-            }
-            
+            youtubeClient = new YouTubeApiChatClient(settings.youtubeApiKey || '', onMsg, onStatus);
             youtubeClient?.connectToVideo(videoId);
           }}
           onDisconnect={() => {
@@ -104,7 +98,7 @@ export function Dashboard() {
           }}
           inputLabel="Video ID or URL"
           inputPlaceholder="e.g. dQw4w9WgXcQ or full URL"
-          requiresApiKey={settings.youtubeMode === 'api'}
+          requiresApiKey={true}
           apiKeyMissing={!settings.youtubeApiKey}
         />
       </div>

@@ -20,7 +20,6 @@ export interface AppSettings {
   overlayFadeTime: number;
   overlayMaxMessages: number;
   obsPort: number;
-  youtubeMode: 'scraper' | 'api';
   youtubeApiKey?: string;
 }
 

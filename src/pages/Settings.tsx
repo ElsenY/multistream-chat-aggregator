@@ -44,50 +44,22 @@ export function Settings() {
               ▶ YouTube Configuration
             </h2>
             <p className="settings-section-desc">
-              Choose how you want to connect to YouTube Live Chat.
+              Configure the YouTube Data API connection to read live chat.
             </p>
 
-            <div className="settings-field">
-              <label>Connection Mode</label>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="youtubeMode"
-                    value="scraper"
-                    checked={settings.youtubeMode === 'scraper'}
-                    onChange={() => updateSettings({ youtubeMode: 'scraper' })}
-                  />
-                  Webview Scraper (No API Key needed)
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="youtubeMode"
-                    value="api"
-                    checked={settings.youtubeMode === 'api'}
-                    onChange={() => updateSettings({ youtubeMode: 'api' })}
-                  />
-                  Data API v3 (Requires API Key)
-                </label>
-              </div>
+            <div className="settings-field" style={{ marginTop: '1rem' }}>
+              <label htmlFor="youtube-api-key">YouTube Data API v3 Key</label>
+              <input
+                id="youtube-api-key"
+                type="password"
+                placeholder="AIzaSy..."
+                value={settings.youtubeApiKey || ''}
+                onChange={(e) => updateSettings({ youtubeApiKey: e.target.value })}
+              />
+              <span className="hint">
+                Required to connect to YouTube streams. Get this from the Google Cloud Console.
+              </span>
             </div>
-
-            {settings.youtubeMode === 'api' && (
-              <div className="settings-field" style={{ marginTop: '1rem' }}>
-                <label htmlFor="youtube-api-key">YouTube Data API v3 Key</label>
-                <input
-                  id="youtube-api-key"
-                  type="password"
-                  placeholder="AIzaSy..."
-                  value={settings.youtubeApiKey || ''}
-                  onChange={(e) => updateSettings({ youtubeApiKey: e.target.value })}
-                />
-                <span className="hint">
-                  Required for Data API mode. Get this from the Google Cloud Console.
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
