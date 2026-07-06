@@ -68,6 +68,7 @@ export function Dashboard() {
           onDisconnect={handleTwitchDisconnect}
           inputLabel="Channel Name"
           inputPlaceholder="e.g. shroud, pokimane"
+          defaultInputValue={settings.twitchChannel || ''}
         />
 
         {/* YouTube Card */}
@@ -96,10 +97,11 @@ export function Dashboard() {
             youtubeClient?.disconnect();
             youtubeClient = null;
           }}
-          inputLabel="Video ID or URL"
-          inputPlaceholder="e.g. dQw4w9WgXcQ or full URL"
+          inputLabel="Video ID, URL, or @ChannelHandle"
+          inputPlaceholder="e.g. dQw4w9WgXcQ, URL, or @LofiGirl"
           requiresApiKey={true}
           apiKeyMissing={!settings.youtubeApiKey}
+          defaultInputValue={settings.youtubeChannel || ''}
         />
       </div>
 

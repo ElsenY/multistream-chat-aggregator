@@ -59,9 +59,11 @@ After a production build, the overlay is served from the embedded binary at `htt
 
 Twitch chat is read **anonymously** — no account, no API key, and no OAuth token is needed.
 
-1. Open the app and go to the **Dashboard**
-2. In the Twitch section, type a channel name (e.g. `shroud`)
-3. Click **Connect**
+1. Open the app and go to the **Dashboard**.
+2. In the Twitch section, type a channel name (e.g. `shroud`).
+3. Click **Connect**.
+
+> **Tip:** You can save your default Twitch channel name in **Settings** so that it is automatically prefilled on the Dashboard next time.
 
 The app connects directly to Twitch's IRC WebSocket (`wss://irc-ws.chat.twitch.tv:443`) as an anonymous guest.
 
@@ -86,11 +88,12 @@ Connecting to YouTube Live Chat requires the official YouTube Data API v3 Key.
 ### How to use:
 1. Go to **Settings** in the app.
 2. Paste your API key into the **YouTube Data API v3 Key** field.
-3. Click **Save Settings**.
-4. On the **Dashboard**, paste a YouTube Live stream URL or Video ID.
-5. Click **Connect**.
+3. (Optional) Save your default YouTube Channel tag (e.g. `@LofiGirl`) in the **Default YouTube Channel** field.
+4. Click **Save Settings**.
+5. On the **Dashboard**, enter a YouTube Live video ID, video URL, or `@ChannelHandle`.
+6. Click **Connect**.
 
-> Settings are persisted in `localStorage` and survive app restarts.
+> **Note on Channel Handles:** Since stream links change every time you go live, entering a handle starting with `@` (e.g. `@LofiGirl`) will trigger the app to automatically find and connect to the active livestream on that channel. Settings are persisted in `localStorage` and survive app restarts.
 
 ---
 

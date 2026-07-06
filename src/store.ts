@@ -33,6 +33,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   overlayMaxMessages: 0,
   obsPort: 9527,
   youtubeApiKey: '',
+  twitchChannel: '',
+  youtubeChannel: '',
 };
 
 function loadSettings(): AppSettings {

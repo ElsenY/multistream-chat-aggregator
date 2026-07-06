@@ -21,6 +21,8 @@ export interface AppSettings {
   overlayMaxMessages: number;
   obsPort: number;
   youtubeApiKey?: string;
+  twitchChannel?: string;
+  youtubeChannel?: string;
 }
 
 export type PlatformFilter = 'all' | 'twitch' | 'youtube';
