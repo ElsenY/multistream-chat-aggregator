@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { ConnectionCard } from '../components/ConnectionCard';
 import { TwitchChatClient } from '../services/twitch';
@@ -46,6 +46,50 @@ export function Dashboard() {
     twitchClient = null;
   }, []);
 
+  // --- YouTube ---
+  const handleYoutubeConnect = useCallback(
+    (videoId: string) => {
+      console.log("connecting to youtube stream")
+      if (youtubeClient) youtubeClient.disconnect();
+      
+      const onMsg = (msg: ChatMessage) => addMessage(msg);
+      const onStatus = (status: string, error?: string) =>
+          setYoutubeConnection({
+            status: status as ConnectionStatus,
+            channel: youtubeClient?.getBroadcastTitle() || videoId,
+            error,
+          });
+
+      youtubeClient = new YouTubeApiChatClient(settings.youtubeApiKey || '', onMsg, onStatus);
+      youtubeClient?.connectToVideo(videoId);
+    },
+    [addMessage, setYoutubeConnection, settings.youtubeApiKey]
+  );
+
+  const handleYoutubeDisconnect = useCallback(() => {
+    console.log("disconnecting from youtube stream")
+    youtubeClient?.disconnect();
+    youtubeClient = null;
+  }, []);
+
+  // Auto-connect on mount if default channels are set and not connected
+  useEffect(() => {
+    if (settings.twitchChannel && twitch.status === 'disconnected') {
+      handleTwitchConnect(settings.twitchChannel);
+    }
+    if (settings.youtubeChannel && settings.youtubeApiKey && youtube.status === 'disconnected') {
+      handleYoutubeConnect(settings.youtubeChannel);
+    }
+  }, [
+    settings.twitchChannel,
+    settings.youtubeChannel,
+    settings.youtubeApiKey,
+    twitch.status,
+    youtube.status,
+    handleTwitchConnect,
+    handleYoutubeConnect,
+  ]);
+
   const uptime = Math.floor((Date.now() - startTimeRef.current) / 60000);
 
   return (
@@ -77,26 +121,8 @@ export function Dashboard() {
           status={youtube.status}
           channel={youtube.channel}
           error={youtube.error}
-          onConnect={(videoId) => {
-            console.log("connecting to youtube stream")
-            if (youtubeClient) youtubeClient.disconnect();
-            
-            const onMsg = (msg: ChatMessage) => addMessage(msg);
-            const onStatus = (status: string, error?: string) =>
-                setYoutubeConnection({
-                  status: status as ConnectionStatus,
-                  channel: youtubeClient?.getBroadcastTitle() || videoId,
-                  error,
-                });
-
-            youtubeClient = new YouTubeApiChatClient(settings.youtubeApiKey || '', onMsg, onStatus);
-            youtubeClient?.connectToVideo(videoId);
-          }}
-          onDisconnect={() => {
-            console.log("connecting to youtube str12312eam")
-            youtubeClient?.disconnect();
-            youtubeClient = null;
-          }}
+          onConnect={handleYoutubeConnect}
+          onDisconnect={handleYoutubeDisconnect}
           inputLabel="Video ID, URL, or @ChannelHandle"
           inputPlaceholder="e.g. dQw4w9WgXcQ, URL, or @LofiGirl"
           requiresApiKey={true}
