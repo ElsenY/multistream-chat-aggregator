@@ -8,6 +8,8 @@ export function Settings() {
   const [maxMessages, setMaxMessages] = useState(String(settings.maxMessages));
   const [overlayFadeTime, setOverlayFadeTime] = useState(String(settings.overlayFadeTime));
   const [overlayMaxMessages, setOverlayMaxMessages] = useState(String(settings.overlayMaxMessages));
+  const [twitchChannel, setTwitchChannel] = useState(settings.twitchChannel || '');
+  const [youtubeChannel, setYoutubeChannel] = useState(settings.youtubeChannel || '');
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -24,6 +26,8 @@ export function Settings() {
       maxMessages: parseInt(maxMessages) || 500,
       overlayFadeTime: fade === 0 ? 0 : (fade || 15),
       overlayMaxMessages: parseInt(overlayMaxMessages) || 20,
+      twitchChannel: twitchChannel.trim(),
+      youtubeChannel: youtubeChannel.trim(),
     });
     setSaved(true);
   };
@@ -44,50 +48,36 @@ export function Settings() {
               ▶ YouTube Configuration
             </h2>
             <p className="settings-section-desc">
-              Choose how you want to connect to YouTube Live Chat.
+              Configure the YouTube Data API connection to read live chat.
             </p>
 
-            <div className="settings-field">
-              <label>Connection Mode</label>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="youtubeMode"
-                    value="scraper"
-                    checked={settings.youtubeMode === 'scraper'}
-                    onChange={() => updateSettings({ youtubeMode: 'scraper' })}
-                  />
-                  Webview Scraper (No API Key needed)
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="youtubeMode"
-                    value="api"
-                    checked={settings.youtubeMode === 'api'}
-                    onChange={() => updateSettings({ youtubeMode: 'api' })}
-                  />
-                  Data API v3 (Requires API Key)
-                </label>
-              </div>
+            <div className="settings-field" style={{ marginTop: '1rem' }}>
+              <label htmlFor="youtube-api-key">YouTube Data API v3 Key</label>
+              <input
+                id="youtube-api-key"
+                type="password"
+                placeholder="AIzaSy..."
+                value={settings.youtubeApiKey || ''}
+                onChange={(e) => updateSettings({ youtubeApiKey: e.target.value })}
+              />
+              <span className="hint">
+                Required to connect to YouTube streams. Get this from the Google Cloud Console.
+              </span>
             </div>
 
-            {settings.youtubeMode === 'api' && (
-              <div className="settings-field" style={{ marginTop: '1rem' }}>
-                <label htmlFor="youtube-api-key">YouTube Data API v3 Key</label>
-                <input
-                  id="youtube-api-key"
-                  type="password"
-                  placeholder="AIzaSy..."
-                  value={settings.youtubeApiKey || ''}
-                  onChange={(e) => updateSettings({ youtubeApiKey: e.target.value })}
-                />
-                <span className="hint">
-                  Required for Data API mode. Get this from the Google Cloud Console.
-                </span>
-              </div>
-            )}
+            <div className="settings-field" style={{ marginTop: '1rem' }}>
+              <label htmlFor="youtube-channel">Default YouTube Channel (Handle starting with @)</label>
+              <input
+                id="youtube-channel"
+                type="text"
+                placeholder="e.g. @LofiGirl"
+                value={youtubeChannel}
+                onChange={(e) => setYoutubeChannel(e.target.value)}
+              />
+              <span className="hint">
+                Prefills the YouTube connection field on the Dashboard.
+              </span>
+            </div>
           </div>
         </div>
 
@@ -99,8 +89,21 @@ export function Settings() {
             </h2>
             <p className="settings-section-desc">
               Twitch chat is read anonymously — no API key or login required!
-              Just enter a channel name on the Dashboard.
             </p>
+
+            <div className="settings-field" style={{ marginTop: '1rem' }}>
+              <label htmlFor="twitch-channel">Default Twitch Channel Name</label>
+              <input
+                id="twitch-channel"
+                type="text"
+                placeholder="e.g. shroud, pokimane"
+                value={twitchChannel}
+                onChange={(e) => setTwitchChannel(e.target.value)}
+              />
+              <span className="hint">
+                Prefills the Twitch connection field on the Dashboard.
+              </span>
+            </div>
           </div>
         </div>
 

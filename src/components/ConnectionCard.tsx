@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ConnectionStatus } from '../types';
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
   inputPlaceholder: string;
   requiresApiKey?: boolean;
   apiKeyMissing?: boolean;
+  defaultInputValue?: string;
 }
 
 export function ConnectionCard({
@@ -25,8 +26,15 @@ export function ConnectionCard({
   inputPlaceholder,
   requiresApiKey,
   apiKeyMissing,
+  defaultInputValue,
 }: Props) {
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState(defaultInputValue || '');
+
+  useEffect(() => {
+    if (defaultInputValue !== undefined) {
+      setInputValue(defaultInputValue);
+    }
+  }, [defaultInputValue]);
 
   const isConnected = status === 'connected';
   const isConnecting = status === 'connecting';
