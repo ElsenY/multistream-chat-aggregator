@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   youtubeApiKey: '',
   twitchChannel: '',
   youtubeChannel: '',
+  maxRetries: 5,
 };
 
 function loadSettings(): AppSettings {

@@ -12,23 +12,32 @@ export class TwitchChatClient {
   private onStatusChange: (status: string, error?: string) => void;
   private shouldReconnect = false;
   private messageId = 0;
+  private maxRetries = 5;
+  private retryCount = 0;
+  private joined = false;
+  private terminalError = false;
 
   constructor(
     onMessage: (msg: ChatMessage) => void,
-    onStatusChange: (status: string, error?: string) => void
+    onStatusChange: (status: string, error?: string) => void,
+    maxRetries?: number
   ) {
     this.onMessage = onMessage;
     this.onStatusChange = onStatusChange;
+    this.maxRetries = maxRetries ?? 5;
   }
 
   connect(channel: string) {
-    this.channel = channel.toLowerCase().replace(/^#/, '');
+    this.channel = channel.trim().toLowerCase().replace(/^#/, '');
     this.shouldReconnect = true;
+    this.terminalError = false;
+    this.retryCount = 0;
     this.onStatusChange('connecting');
     this.doConnect();
   }
 
   private doConnect() {
+    this.joined = false;
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -37,12 +46,12 @@ export class TwitchChatClient {
     const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
 
     ws.onopen = () => {
+      // Anonymous login — justinfan + random number
+      ws.send('PASS SCHMOOPIIE');
+      ws.send(`NICK justinfan${Math.floor(Math.random() * 99999)}`);
       // Request capabilities for user metadata (colors, badges, etc.)
       ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
-      // Anonymous login — justinfan + random number
-      ws.send(`NICK justinfan${Math.floor(Math.random() * 99999)}`);
       ws.send(`JOIN #${this.channel}`);
-      this.onStatusChange('connected');
     };
 
     ws.onmessage = (event) => {
@@ -57,9 +66,18 @@ export class TwitchChatClient {
     };
 
     ws.onclose = () => {
+      if (this.terminalError) return;
       if (this.shouldReconnect) {
+        if (this.retryCount >= this.maxRetries) {
+          this.shouldReconnect = false;
+          this.onStatusChange('error', `Disconnected. Max reconnection attempts (${this.maxRetries}) reached.`);
+          return;
+        }
+        this.retryCount++;
         this.onStatusChange('connecting');
-        this.reconnectTimer = setTimeout(() => this.doConnect(), 3000);
+        const delay = Math.min(1000 * Math.pow(2, this.retryCount), 30000); // exponential backoff capped at 30s
+        console.log(`Twitch reconnect attempt ${this.retryCount}/${this.maxRetries} in ${delay}ms`);
+        this.reconnectTimer = setTimeout(() => this.doConnect(), delay);
       } else {
         this.onStatusChange('disconnected');
       }
@@ -72,6 +90,26 @@ export class TwitchChatClient {
     // Respond to PING to keep connection alive
     if (raw.startsWith('PING')) {
       this.ws?.send('PONG :tmi.twitch.tv');
+      return;
+    }
+
+    const joinedChannel = raw.match(/\sJOIN\s#([^\s]+)/)?.[1]
+      || raw.match(/\sROOMSTATE\s#([^\s]+)/)?.[1];
+    if (joinedChannel?.toLowerCase() === this.channel && !this.joined) {
+      this.joined = true;
+      this.retryCount = 0;
+      this.onStatusChange('connected');
+      return;
+    }
+
+    if (
+      raw.includes(' NOTICE ')
+      && /msg_channel_suspended|msg_banned|msg_room_not_found|no_permission|authentication failed/i.test(raw)
+    ) {
+      this.shouldReconnect = false;
+      this.terminalError = true;
+      this.onStatusChange('error', 'Twitch rejected the channel join request.');
+      this.ws?.close();
       return;
     }
 

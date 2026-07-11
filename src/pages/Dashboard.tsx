@@ -1,20 +1,11 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback } from 'react';
 import { useAppStore } from '../store';
 import { ConnectionCard } from '../components/ConnectionCard';
-import { TwitchChatClient } from '../services/twitch';
-import { YouTubeApiChatClient } from '../services/youtubeApi';
-import type { ChatMessage, ConnectionStatus } from '../types';
-
-// Singleton clients — survive re-renders
-let twitchClient: TwitchChatClient | null = null;
-let youtubeClient: YouTubeApiChatClient | null = null;
+import { connectionManager } from '../services/connectionManager';
 
 export function Dashboard() {
-  const addMessage = useAppStore((s) => s.addMessage);
   const twitch = useAppStore((s) => s.twitch);
   const youtube = useAppStore((s) => s.youtube);
-  const setTwitchConnection = useAppStore((s) => s.setTwitchConnection);
-  const setYoutubeConnection = useAppStore((s) => s.setYoutubeConnection);
   const settings = useAppStore((s) => s.settings);
   const messageCount = useAppStore((s) => s.messageCount);
   const clearMessages = useAppStore((s) => s.clearMessages);
@@ -24,71 +15,23 @@ export function Dashboard() {
 
   // --- Twitch ---
   const handleTwitchConnect = useCallback(
-    (channel: string) => {
-      if (twitchClient) twitchClient.disconnect();
-
-      twitchClient = new TwitchChatClient(
-        (msg: ChatMessage) => addMessage(msg),
-        (status: string, error?: string) =>
-          setTwitchConnection({
-            status: status as ConnectionStatus,
-            channel,
-            error,
-          })
-      );
-      twitchClient.connect(channel);
-    },
-    [addMessage, setTwitchConnection]
+    (channel: string) => connectionManager.connectTwitch(channel),
+    []
   );
 
   const handleTwitchDisconnect = useCallback(() => {
-    twitchClient?.disconnect();
-    twitchClient = null;
+    connectionManager.disconnectTwitch();
   }, []);
 
   // --- YouTube ---
   const handleYoutubeConnect = useCallback(
-    (videoId: string) => {
-      console.log("connecting to youtube stream")
-      if (youtubeClient) youtubeClient.disconnect();
-      
-      const onMsg = (msg: ChatMessage) => addMessage(msg);
-      const onStatus = (status: string, error?: string) =>
-          setYoutubeConnection({
-            status: status as ConnectionStatus,
-            channel: youtubeClient?.getBroadcastTitle() || videoId,
-            error,
-          });
-
-      youtubeClient = new YouTubeApiChatClient(settings.youtubeApiKey || '', onMsg, onStatus);
-      youtubeClient?.connectToVideo(videoId);
-    },
-    [addMessage, setYoutubeConnection, settings.youtubeApiKey]
+    (input: string) => void connectionManager.connectYouTube(input),
+    []
   );
 
   const handleYoutubeDisconnect = useCallback(() => {
-    console.log("disconnecting from youtube stream")
-    youtubeClient?.disconnect();
-    youtubeClient = null;
+    void connectionManager.disconnectYouTube();
   }, []);
-
-  // Auto-connect on mount if default channels are set and not connected
-  useEffect(() => {
-    if (settings.twitchChannel && twitch.status === 'disconnected') {
-      handleTwitchConnect(settings.twitchChannel);
-    }
-    if (settings.youtubeChannel && settings.youtubeApiKey && youtube.status === 'disconnected') {
-      handleYoutubeConnect(settings.youtubeChannel);
-    }
-  }, [
-    settings.twitchChannel,
-    settings.youtubeChannel,
-    settings.youtubeApiKey,
-    twitch.status,
-    youtube.status,
-    handleTwitchConnect,
-    handleYoutubeConnect,
-  ]);
 
   const uptime = Math.floor((Date.now() - startTimeRef.current) / 60000);
 
@@ -166,5 +109,5 @@ export function Dashboard() {
   );
 }
 
-export function getTwitchClient() { return twitchClient; }
-export function getYoutubeClient() { return youtubeClient; }
+export function getTwitchClient() { return connectionManager.getTwitchClient(); }
+export function getYoutubeClient() { return connectionManager.getYoutubeClient(); }

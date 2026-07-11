@@ -8,12 +8,17 @@ import { Settings } from './pages/Settings';
 import { Overlay } from './pages/Overlay';
 import { useAppStore } from './store';
 import { isInTauri } from './utils/environment';
+import { connectionManager } from './services/connectionManager';
 
 function AppLayout() {
   const location = useLocation();
   const isOverlay = location.pathname === '/overlay';
   const settings = useAppStore((s) => s.settings);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    connectionManager.startAutoConnect();
+  }, []);
 
   // Toggle transparent background for OBS overlay
   useEffect(() => {

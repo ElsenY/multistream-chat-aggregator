@@ -10,6 +10,7 @@ export function Settings() {
   const [overlayMaxMessages, setOverlayMaxMessages] = useState(String(settings.overlayMaxMessages));
   const [twitchChannel, setTwitchChannel] = useState(settings.twitchChannel || '');
   const [youtubeChannel, setYoutubeChannel] = useState(settings.youtubeChannel || '');
+  const [maxRetries, setMaxRetries] = useState(String(settings.maxRetries ?? 5));
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -28,6 +29,7 @@ export function Settings() {
       overlayMaxMessages: parseInt(overlayMaxMessages) || 20,
       twitchChannel: twitchChannel.trim(),
       youtubeChannel: youtubeChannel.trim(),
+      maxRetries: parseInt(maxRetries) || 5,
     });
     setSaved(true);
   };
@@ -75,7 +77,7 @@ export function Settings() {
                 onChange={(e) => setYoutubeChannel(e.target.value)}
               />
               <span className="hint">
-                Prefills the YouTube connection field on the Dashboard.
+                Automatically connects to this channel's active livestream when the app starts.
               </span>
             </div>
           </div>
@@ -101,18 +103,18 @@ export function Settings() {
                 onChange={(e) => setTwitchChannel(e.target.value)}
               />
               <span className="hint">
-                Prefills the Twitch connection field on the Dashboard.
+                Automatically connects to this Twitch channel when the app starts.
               </span>
             </div>
           </div>
         </div>
 
-        {/* Chat Display */}
+        {/* General & Connection Settings */}
         <div className="glass-card" style={{ marginBottom: 'var(--space-xl)' }}>
           <div className="settings-section">
-            <h2 className="settings-section-title">Chat Display</h2>
+            <h2 className="settings-section-title">General & Connection Settings</h2>
             <p className="settings-section-desc">
-              Customize how messages are displayed in the chat feed.
+              Configure chat display limits and connection retry policies.
             </p>
 
             <div className="settings-field">
@@ -127,6 +129,21 @@ export function Settings() {
               />
               <span className="hint">
                 Old messages are removed when this limit is exceeded. Default: 500.
+              </span>
+            </div>
+
+            <div className="settings-field" style={{ marginTop: '1rem' }}>
+              <label htmlFor="max-retries">Max Connection Retries</label>
+              <input
+                id="max-retries"
+                type="number"
+                value={maxRetries}
+                onChange={(e) => setMaxRetries(e.target.value)}
+                min="1"
+                max="20"
+              />
+              <span className="hint">
+                The number of times the app will try to reconnect to Twitch/YouTube before showing an error. Default: 5.
               </span>
             </div>
           </div>

@@ -151,6 +151,15 @@ The overlay system uses two separate local servers, both started automatically w
 
 > The Tauri app **must be running** for the overlay to receive messages. OBS connects to the local servers at `9527`/`9528` which only exist while the app is open.
 
+### General & Connection Settings
+
+Configure in **Settings → General & Connection Settings**:
+
+| Setting | Default | Description |
+|---|---|---|
+| Max Messages in Feed | `500` | The limit of cached messages shown in the dashboard list |
+| Max Connection Retries | `5` | The number of connection retry attempts the app will make to Twitch/YouTube before failing (using exponential backoff) |
+
 ### Overlay Settings
 
 Configure in **Settings → OBS Overlay**:
