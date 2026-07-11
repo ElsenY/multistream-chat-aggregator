@@ -23,6 +23,7 @@ export interface AppSettings {
   youtubeApiKey?: string;
   twitchChannel?: string;
   youtubeChannel?: string;
+  maxRetries?: number;
 }
 
 export type PlatformFilter = 'all' | 'twitch' | 'youtube';

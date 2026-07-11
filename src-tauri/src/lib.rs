@@ -112,6 +112,7 @@ async fn start_youtube_grpc_stream(
     state: tauri::State<'_, YoutubeGrpcState>,
     api_key: String,
     live_chat_id: String,
+    max_retries: u32,
 ) -> Result<(), String> {
     // 1. Cancel existing stream if any
     {
@@ -130,9 +131,10 @@ async fn start_youtube_grpc_stream(
 
     // 3. Spawn Tokio background task
     tokio::spawn(async move {
-        println!("Starting YouTube gRPC stream for live_chat_id: {}", live_chat_id);
+        println!("Starting YouTube gRPC stream for live_chat_id: {} with max_retries: {}", live_chat_id, max_retries);
         
         let mut next_page_token: Option<String> = None;
+        let mut retry_count = 0;
         
         loop {
             // Check cancellation before connecting/reconnecting
@@ -152,13 +154,27 @@ async fn start_youtube_grpc_stream(
                     Ok(c) => c,
                     Err(e) => {
                         eprintln!("Failed to connect to YouTube gRPC endpoint: {:?}", e);
-                        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+                        if retry_count >= max_retries {
+                            let _ = app.emit("youtube-grpc-error", "Max reconnection attempts reached");
+                            break;
+                        }
+                        retry_count += 1;
+                        let delay = std::cmp::min(1 << retry_count, 30);
+                        println!("YouTube reconnect attempt {}/{} in {}s", retry_count, max_retries, delay);
+                        tokio::time::sleep(tokio::time::Duration::from_secs(delay as u64)).await;
                         continue;
                     }
                 },
                 Err(e) => {
                     eprintln!("Failed to configure TLS for Channel: {:?}", e);
-                    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+                    if retry_count >= max_retries {
+                        let _ = app.emit("youtube-grpc-error", "Max reconnection attempts reached");
+                        break;
+                    }
+                    retry_count += 1;
+                    let delay = std::cmp::min(1 << retry_count, 30);
+                    println!("YouTube reconnect attempt {}/{} in {}s", retry_count, max_retries, delay);
+                    tokio::time::sleep(tokio::time::Duration::from_secs(delay as u64)).await;
                     continue;
                 }
             };
@@ -186,14 +202,25 @@ async fn start_youtube_grpc_stream(
 
             // Call the StreamList RPC
             let mut response_stream = match client.stream_list(req).await {
-                Ok(res) => res.into_inner(),
+                Ok(res) => {
+                    retry_count = 0; // reset on successful connection
+                    res.into_inner()
+                }
                 Err(status) => {
                     eprintln!("gRPC error status: {:?}", status);
                     if status.code() == tonic::Code::InvalidArgument {
                         // Probably bad chat ID or invalid request parameters, stop completely
+                        let _ = app.emit("youtube-grpc-error", status.message().to_string());
                         break;
                     }
-                    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+                    if retry_count >= max_retries {
+                        let _ = app.emit("youtube-grpc-error", "Max reconnection attempts reached");
+                        break;
+                    }
+                    retry_count += 1;
+                    let delay = std::cmp::min(1 << retry_count, 30);
+                    println!("YouTube reconnect attempt {}/{} in {}s", retry_count, max_retries, delay);
+                    tokio::time::sleep(tokio::time::Duration::from_secs(delay as u64)).await;
                     continue;
                 }
             };
@@ -241,8 +268,16 @@ async fn start_youtube_grpc_stream(
                 break;
             }
 
+            if retry_count >= max_retries {
+                let _ = app.emit("youtube-grpc-error", "Max reconnection attempts reached");
+                break;
+            }
+            retry_count += 1;
+
             // Reconnection backoff
-            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+            let delay = std::cmp::min(1 << retry_count, 30);
+            println!("YouTube reconnect attempt {}/{} in {}s", retry_count, max_retries, delay);
+            tokio::time::sleep(tokio::time::Duration::from_secs(delay as u64)).await;
         }
     });
 
