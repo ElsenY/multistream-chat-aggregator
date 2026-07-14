@@ -17,7 +17,11 @@ function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
-    connectionManager.startAutoConnect();
+    // The native app owns chat ingestion. Browser/OBS views receive the
+    // resulting messages over SSE and must not open their own chat clients.
+    if (isInTauri()) {
+      connectionManager.startAutoConnect();
+    }
   }, []);
 
   // Toggle transparent background for OBS overlay

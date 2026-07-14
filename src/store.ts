@@ -55,6 +55,25 @@ export const useAppStore = create<AppState>((set, get) => {
   return {
     messages: [],
     addMessage: (msg, fromSync = false) => {
+      let inserted = false;
+      set((state) => {
+        // All message sources pass through here, so deduplicate at the store
+        // boundary instead of relying on each transport to do it correctly.
+        if (msg.id && state.messages.some((message) => message.id === msg.id)) {
+          return state;
+        }
+
+        inserted = true;
+        const maxMessages = state.settings.maxMessages;
+        const updated = [...state.messages, msg];
+        if (updated.length > maxMessages + 100) {
+          return { messages: updated.slice(-maxMessages) };
+        }
+        return { messages: updated };
+      });
+
+      if (!inserted) return;
+
       if (!fromSync) {
         if (syncChannel) {
           syncChannel.postMessage({ type: 'ADD_MESSAGE', payload: msg });
@@ -67,14 +86,6 @@ export const useAppStore = create<AppState>((set, get) => {
           });
         }
       }
-      set((state) => {
-        const maxMessages = state.settings.maxMessages;
-        const updated = [...state.messages, msg];
-        if (updated.length > maxMessages + 100) {
-          return { messages: updated.slice(-maxMessages) };
-        }
-        return { messages: updated };
-      });
     },
     clearMessages: (fromSync = false) => {
       if (!fromSync) {
