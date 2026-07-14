@@ -131,7 +131,9 @@ export class TwitchChatClient {
     });
 
     const chatMsg: ChatMessage = {
-      id: `tw-${++this.messageId}-${Date.now()}`,
+      // Twitch supplies the same message ID to every IRC client, which lets
+      // the store recognize a message received through more than one path.
+      id: tags['id'] || `tw-${++this.messageId}-${Date.now()}`,
       platform: 'twitch',
       username: username,
       displayName: tags['display-name'] || username,
