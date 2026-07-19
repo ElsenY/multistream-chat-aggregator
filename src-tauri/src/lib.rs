@@ -27,6 +27,17 @@ pub struct SseState {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
+struct ChatMessagePart {
+    #[serde(rename = "type")]
+    part_type: String,
+    text: String,
+    #[serde(default)]
+    id: Option<String>,
+    #[serde(rename = "imageUrl", default)]
+    image_url: Option<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 struct ChatMessage {
     id: String,
     platform: String,
@@ -34,6 +45,8 @@ struct ChatMessage {
     #[serde(rename = "displayName")]
     display_name: String,
     message: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    parts: Option<Vec<ChatMessagePart>>,
     timestamp: u64,
     #[serde(default)]
     color: String,
@@ -94,6 +107,7 @@ fn parse_grpc_message(item: &youtube::api::v3::LiveChatMessage) -> Option<ChatMe
         username: channel_id,
         display_name,
         message: message_text,
+        parts: None,
         timestamp,
         color,
         is_mod: author.is_chat_moderator.unwrap_or(false),
