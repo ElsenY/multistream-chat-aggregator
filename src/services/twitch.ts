@@ -1,4 +1,90 @@
-import type { ChatMessage } from '../types';
+import type { ChatMessage, ChatMessagePart } from '../types';
+
+const TWITCH_EMOTE_CDN = 'https://static-cdn.jtvnw.net/emoticons/v2';
+
+interface EmoteOccurrence {
+  id: string;
+  start: number;
+  end: number;
+}
+
+/**
+ * Converts Twitch's `emotes` IRC tag into renderable, ordered message parts.
+ * Twitch ranges are inclusive and refer to character positions in the message.
+ */
+export function parseTwitchEmoteParts(
+  message: string,
+  emotesTag: string
+): ChatMessagePart[] | undefined {
+  if (!emotesTag) return undefined;
+
+  const characters = Array.from(message);
+  const occurrences: EmoteOccurrence[] = [];
+
+  for (const emoteEntry of emotesTag.split('/')) {
+    const separatorIndex = emoteEntry.indexOf(':');
+    if (separatorIndex <= 0) continue;
+
+    const id = emoteEntry.slice(0, separatorIndex);
+    const ranges = emoteEntry.slice(separatorIndex + 1);
+
+    for (const range of ranges.split(',')) {
+      const [startValue, endValue] = range.split('-');
+      const start = Number.parseInt(startValue, 10);
+      const end = Number.parseInt(endValue, 10);
+
+      if (
+        Number.isInteger(start)
+        && Number.isInteger(end)
+        && start >= 0
+        && end >= start
+        && end < characters.length
+      ) {
+        occurrences.push({ id, start, end });
+      }
+    }
+  }
+
+  if (occurrences.length === 0) return undefined;
+  occurrences.sort((a, b) => a.start - b.start || a.end - b.end);
+
+  const parts: ChatMessagePart[] = [];
+  let cursor = 0;
+
+  for (const occurrence of occurrences) {
+    // Ignore malformed overlapping ranges rather than duplicating message text.
+    if (occurrence.start < cursor) continue;
+
+    if (occurrence.start > cursor) {
+      parts.push({
+        type: 'text',
+        text: characters.slice(cursor, occurrence.start).join(''),
+      });
+    }
+
+    const emoteText = characters.slice(occurrence.start, occurrence.end + 1).join('');
+    parts.push({
+      type: 'emote',
+      id: occurrence.id,
+      text: emoteText,
+      imageUrl: `${TWITCH_EMOTE_CDN}/${encodeURIComponent(occurrence.id)}/static/dark/1.0`,
+    });
+    cursor = occurrence.end + 1;
+  }
+
+  if (cursor < characters.length) {
+    parts.push({ type: 'text', text: characters.slice(cursor).join('') });
+  }
+
+  return parts.length > 0 ? parts : undefined;
+}
+
+function normalizeTwitchMessage(message: string): string {
+  if (!message.startsWith('\u0001ACTION ')) return message;
+
+  const action = message.slice('\u0001ACTION '.length);
+  return action.endsWith('\u0001') ? action.slice(0, -1) : action;
+}
 
 /**
  * Twitch IRC WebSocket client.
@@ -121,7 +207,7 @@ export class TwitchChatClient {
 
     if (!privmsgMatch) return;
 
-    const [, tagsStr, username, message] = privmsgMatch;
+    const [, tagsStr, username, rawMessage] = privmsgMatch;
 
     // Parse tags
     const tags: Record<string, string> = {};
@@ -129,6 +215,9 @@ export class TwitchChatClient {
       const [key, val] = tag.split('=');
       tags[key] = val || '';
     });
+
+    const message = normalizeTwitchMessage(rawMessage);
+    const parts = parseTwitchEmoteParts(message, tags['emotes']);
 
     const chatMsg: ChatMessage = {
       // Twitch supplies the same message ID to every IRC client, which lets
@@ -138,6 +227,7 @@ export class TwitchChatClient {
       username: username,
       displayName: tags['display-name'] || username,
       message: message,
+      parts,
       timestamp: Date.now(),
       color: tags['color'] || this.generateColor(username),
       isMod: tags['mod'] === '1',

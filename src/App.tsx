@@ -13,8 +13,9 @@ import { connectionManager } from './services/connectionManager';
 function AppLayout() {
   const location = useLocation();
   const isOverlay = location.pathname === '/overlay';
+  const isChat = location.pathname === '/chat';
   const settings = useAppStore((s) => s.settings);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(isChat);
 
   useEffect(() => {
     // The native app owns chat ingestion. Browser/OBS views receive the
@@ -43,6 +44,12 @@ function AppLayout() {
       });
     }
   }, [settings]);
+
+  // Give the chat feed the full window when entering it, including direct
+  // navigation to #/chat. Restore the sidebar when leaving the chat route.
+  useEffect(() => {
+    setSidebarCollapsed(isChat);
+  }, [isChat]);
 
   // Overlay route renders without chrome
   if (isOverlay) {

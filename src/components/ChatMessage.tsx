@@ -1,4 +1,5 @@
 import type { ChatMessage as ChatMessageType } from '../types';
+import { MessageContent } from './MessageContent';
 
 interface Props {
   message: ChatMessageType;
@@ -24,7 +25,7 @@ export function ChatMessage({ message, showTimestamp = true }: Props) {
           {message.isOwner && '👑 '}
           {message.displayName}
         </span>
-        <span className="chat-message-text">{message.message}</span>
+        <MessageContent message={message} className="chat-message-text" />
       </div>
 
       {showTimestamp && (

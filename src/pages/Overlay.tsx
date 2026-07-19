@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import type { ChatMessage } from '../types';
 import { isInTauri } from '../utils/environment';
+import { MessageContent } from '../components/MessageContent';
 
 interface OverlayMessage extends ChatMessage {
   fadeOut: boolean;
@@ -98,7 +99,7 @@ export function Overlay() {
               >
                 {msg.displayName}
               </span>
-              <span className="overlay-text">{msg.message}</span>
+              <MessageContent message={msg} className="overlay-text" />
             </div>
           </div>
         ))}
